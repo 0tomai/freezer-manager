@@ -49,9 +49,9 @@
       <span class="install-icon">🧊</span>
       <div class="install-text">
         <strong>Installer Congélo</strong>
-        <span>Accès direct depuis votre écran d'accueil</span>
+        <span id="install-manual">Menu ⋮ → "Ajouter à l'écran d'accueil"</span>
       </div>
-      <button class="install-btn" onclick="triggerInstall()">Installer</button>
+      <button id="install-btn" class="install-btn" onclick="triggerInstall()" style="display:none">Installer</button>
       <button class="install-close" onclick="dismissInstall()" aria-label="Fermer">&times;</button>
     </div>
 
@@ -82,6 +82,7 @@
 
         if (isStandalone() || localStorage.getItem(KEY)) return;
 
+        // iOS : instructions manuelles
         if (isIOS()) {
           setTimeout(() => {
             document.getElementById('install-ios').classList.add('install-visible');
@@ -89,15 +90,21 @@
           return;
         }
 
+        // Android/Desktop : toujours afficher le banneau après 2.5s
+        // Si beforeinstallprompt se déclenche on active le bouton Installer,
+        // sinon on affiche les instructions manuelles.
         window.addEventListener('beforeinstallprompt', e => {
           e.preventDefault();
           deferredPrompt = e;
-          setTimeout(() => {
-            document.getElementById('install-banner').classList.add('install-visible');
-          }, 2500);
+          document.getElementById('install-btn').style.display = 'inline-block';
+          document.getElementById('install-manual').style.display = 'none';
         });
 
-        window.addEventListener('appinstalled', () => dismissInstall());
+        window.addEventListener('appinstalled', dismissInstall);
+
+        setTimeout(() => {
+          document.getElementById('install-banner').classList.add('install-visible');
+        }, 2500);
 
         window.triggerInstall = function () {
           if (!deferredPrompt) return;
