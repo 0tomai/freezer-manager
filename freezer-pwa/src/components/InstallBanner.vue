@@ -3,10 +3,11 @@
     <span class="install-icon">🧊</span>
     <div class="install-text">
       <strong>Installer l'app</strong>
-      <span v-if="isIos">Appuie sur <b>Partager</b> puis <b>Sur l'écran d'accueil</b></span>
-      <span v-else>Accès rapide depuis ton téléphone</span>
+      <span v-if="isIos">Appuie sur <b>⎋ Partager</b> → <b>Sur l'écran d'accueil</b></span>
+      <span v-else-if="canPrompt">Accès rapide depuis ton téléphone</span>
+      <span v-else>Ouvre le menu de ton navigateur → <b>Ajouter à l'écran d'accueil</b></span>
     </div>
-    <button v-if="!isIos" class="btn-primary install-btn" @click="install">Installer</button>
+    <button v-if="canPrompt" class="btn-primary install-btn" @click="install">Installer</button>
     <button class="btn-icon close-btn" @click="dismiss">✕</button>
   </div>
 </template>
@@ -16,26 +17,28 @@ import { ref, onMounted } from "vue";
 
 const visible = ref(false);
 const isIos = ref(false);
+const canPrompt = ref(false);
 let deferredPrompt = null;
 
 onMounted(() => {
-  // Ne pas afficher si déjà installée (mode standalone)
   if (window.matchMedia("(display-mode: standalone)").matches) return;
+  if (window.navigator.standalone === true) return;
   if (localStorage.getItem("install_dismissed")) return;
 
   const ua = navigator.userAgent;
-  const ios = /iphone|ipad|ipod/i.test(ua) && !/crios/i.test(ua);
+  isIos.value = /iphone|ipad|ipod/i.test(ua) && !/crios/i.test(ua);
 
-  if (ios) {
-    isIos.value = true;
-    visible.value = true;
-    return;
-  }
+  // Toujours afficher le bandeau (avec instructions manuelles en fallback)
+  visible.value = true;
 
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    visible.value = true;
+    canPrompt.value = true;
+  });
+
+  window.addEventListener("appinstalled", () => {
+    visible.value = false;
   });
 });
 
@@ -45,6 +48,7 @@ async function install() {
   const { outcome } = await deferredPrompt.userChoice;
   if (outcome === "accepted") visible.value = false;
   deferredPrompt = null;
+  canPrompt.value = false;
 }
 
 function dismiss() {
