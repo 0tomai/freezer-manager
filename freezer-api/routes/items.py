@@ -1,7 +1,6 @@
 from flask import Blueprint, request, jsonify
 from app import db
 from models import Item, Compartment
-from utils.auth_middleware import require_token
 from utils.validators import require_json, validate_quantity
 from services.sync_service import apply_sync_batch
 
@@ -9,7 +8,6 @@ items_bp = Blueprint("items", __name__)
 
 
 @items_bp.get("/compartment/<int:comp_id>")
-@require_token
 def list_items(comp_id):
     Compartment.query.get_or_404(comp_id)
     items = Item.query.filter_by(compartment_id=comp_id).order_by(Item.name).all()
@@ -17,7 +15,6 @@ def list_items(comp_id):
 
 
 @items_bp.post("/")
-@require_token
 @require_json("compartment_id", "name")
 def create_item():
     data = request.get_json()
@@ -37,7 +34,6 @@ def create_item():
 
 
 @items_bp.put("/<int:item_id>")
-@require_token
 def update_item(item_id):
     item = Item.query.get_or_404(item_id)
     data = request.get_json(silent=True) or {}
@@ -59,10 +55,8 @@ def update_item(item_id):
 
 
 @items_bp.patch("/<int:item_id>/quantity")
-@require_token
 @require_json("delta")
 def adjust_quantity(item_id):
-    """Incrémente ou décrémente la quantité d'un article."""
     item = Item.query.get_or_404(item_id)
     data = request.get_json()
 
@@ -81,7 +75,6 @@ def adjust_quantity(item_id):
 
 
 @items_bp.delete("/<int:item_id>")
-@require_token
 def delete_item(item_id):
     item = Item.query.get_or_404(item_id)
     db.session.delete(item)
@@ -90,9 +83,7 @@ def delete_item(item_id):
 
 
 @items_bp.post("/sync")
-@require_token
 def sync_offline():
-    """Rejoue une liste d'opérations effectuées hors connexion."""
     data = request.get_json(silent=True) or {}
     operations = data.get("operations", [])
 

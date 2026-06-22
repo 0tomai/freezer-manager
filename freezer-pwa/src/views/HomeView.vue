@@ -3,7 +3,6 @@
     <header class="topbar">
       <span class="topbar-title">Mes congélateurs</span>
       <SyncBadge />
-      <button class="btn-icon" @click="logout" title="Déconnexion">🚪</button>
     </header>
 
     <main class="page">
@@ -43,7 +42,6 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
 import { useFreezerStore } from "../store/freezers.js";
 import FreezerCard from "../components/FreezerCard.vue";
 import AddFreezerModal from "../components/AddFreezerModal.vue";
@@ -51,20 +49,12 @@ import SyncBadge from "../components/SyncBadge.vue";
 import ConfirmDialog from "../components/ConfirmDialog.vue";
 
 const store = useFreezerStore();
-const router = useRouter();
 const showAdd = ref(false);
 const toDelete = ref(null);
 
 onMounted(() => store.loadFreezer());
 
-function logout() {
-  localStorage.removeItem("freezer_token");
-  router.push("/login");
-}
-
-function confirmDelete(f) {
-  toDelete.value = f;
-}
+function confirmDelete(f) { toDelete.value = f; }
 
 async function doDelete() {
   await store.removeFreezer(toDelete.value.id);

@@ -1,14 +1,12 @@
 from flask import Blueprint, request, jsonify
 from app import db
 from models import Compartment, Freezer
-from utils.auth_middleware import require_token
 from utils.validators import require_json
 
 compartments_bp = Blueprint("compartments", __name__)
 
 
 @compartments_bp.get("/freezer/<int:freezer_id>")
-@require_token
 def list_compartments(freezer_id):
     Freezer.query.get_or_404(freezer_id)
     comps = (
@@ -20,14 +18,12 @@ def list_compartments(freezer_id):
 
 
 @compartments_bp.get("/<int:comp_id>")
-@require_token
 def get_compartment(comp_id):
     comp = Compartment.query.get_or_404(comp_id)
     return jsonify(comp.to_dict(include_items=True))
 
 
 @compartments_bp.post("/")
-@require_token
 @require_json("freezer_id", "name")
 def create_compartment():
     data = request.get_json()
@@ -48,7 +44,6 @@ def create_compartment():
 
 
 @compartments_bp.put("/<int:comp_id>")
-@require_token
 @require_json("name")
 def update_compartment(comp_id):
     comp = Compartment.query.get_or_404(comp_id)
@@ -60,7 +55,6 @@ def update_compartment(comp_id):
 
 
 @compartments_bp.delete("/<int:comp_id>")
-@require_token
 def delete_compartment(comp_id):
     comp = Compartment.query.get_or_404(comp_id)
     db.session.delete(comp)
