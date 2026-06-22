@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+freezer-api/*.db
+freezer-api/.env
+freezer-api/venv/
+
+# Node
+freezer-pwa/node_modules/
+freezer-pwa/dist/
+freezer-pwa/.env
+
+# frontend_dist est commité (utilisé par PythonAnywhere)
+# pour le regénérer : bash build.sh
