@@ -4,11 +4,116 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#1e40af" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Congélo">
+    <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <link rel="icon" href="/icons/icon-192.png" />
     <title>Congélo</title>
+    <style>
+      .install-banner {
+        position: fixed;
+        bottom: -140px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999;
+        width: calc(100% - 2rem);
+        max-width: 520px;
+        background: #1e293b;
+        border: 1px solid #475569;
+        border-top: 3px solid #3b82f6;
+        padding: 0.85rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        box-shadow: 0 -4px 24px rgba(0,0,0,.6);
+        border-radius: 12px 12px 0 0;
+        transition: bottom 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      .install-banner.install-visible { bottom: 0; }
+      .install-icon { font-size: 2rem; line-height: 1; flex-shrink: 0; }
+      .install-text { flex: 1; min-width: 0; }
+      .install-text strong { display: block; font-size: .9rem; font-weight: 700; color: #f1f5f9; margin-bottom: .15rem; }
+      .install-text span { display: block; font-size: .8rem; color: #94a3b8; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .install-ios .install-text span { white-space: normal; }
+      .install-btn { flex-shrink: 0; background: #3b82f6; color: #fff; border: none; border-radius: 8px; padding: .45rem 1rem; font-size: .85rem; font-weight: 600; cursor: pointer; }
+      .install-btn:active { background: #2563eb; }
+      .install-close { background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer; line-height: 1; padding: .2rem .4rem; flex-shrink: 0; }
+      .install-close:hover { color: #f1f5f9; }
+    </style>
   </head>
   <body>
+    <!-- Bannière Android/Desktop -->
+    <div id="install-banner" class="install-banner">
+      <span class="install-icon">🧊</span>
+      <div class="install-text">
+        <strong>Installer Congélo</strong>
+        <span>Accès direct depuis votre écran d'accueil</span>
+      </div>
+      <button class="install-btn" onclick="triggerInstall()">Installer</button>
+      <button class="install-close" onclick="dismissInstall()" aria-label="Fermer">&times;</button>
+    </div>
+
+    <!-- Bannière iOS -->
+    <div id="install-ios" class="install-banner install-ios">
+      <span class="install-icon">🧊</span>
+      <div class="install-text">
+        <strong>Installer l'application</strong>
+        <span>Appuyez sur <strong>⎋ Partager</strong> puis <strong>"Sur l'écran d'accueil"</strong></span>
+      </div>
+      <button class="install-close" onclick="dismissInstall()" aria-label="Fermer">&times;</button>
+    </div>
+
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
+    <script>
+      (() => {
+        const KEY = 'congelo-install-dismissed';
+        let deferredPrompt = null;
+
+        function isIOS() {
+          return /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
+        }
+        function isStandalone() {
+          return window.matchMedia('(display-mode: standalone)').matches
+              || window.navigator.standalone === true;
+        }
+
+        if (isStandalone() || localStorage.getItem(KEY)) return;
+
+        if (isIOS()) {
+          setTimeout(() => {
+            document.getElementById('install-ios').classList.add('install-visible');
+          }, 2500);
+          return;
+        }
+
+        window.addEventListener('beforeinstallprompt', e => {
+          e.preventDefault();
+          deferredPrompt = e;
+          setTimeout(() => {
+            document.getElementById('install-banner').classList.add('install-visible');
+          }, 2500);
+        });
+
+        window.addEventListener('appinstalled', () => dismissInstall());
+
+        window.triggerInstall = function () {
+          if (!deferredPrompt) return;
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(r => {
+            if (r.outcome === 'accepted') dismissInstall();
+            deferredPrompt = null;
+          });
+        };
+
+        window.dismissInstall = function () {
+          document.getElementById('install-banner').classList.remove('install-visible');
+          document.getElementById('install-ios').classList.remove('install-visible');
+          localStorage.setItem(KEY, '1');
+        };
+      })();
+    </script>
   </body>
 </html>
